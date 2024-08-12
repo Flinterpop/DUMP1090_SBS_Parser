@@ -3,16 +3,16 @@
   "WorkspaceRootPath": "C:\\source\\gitinternal\\DUMP1090_SBS_Parser\\",
   "Documents": [
     {
-      "AbsoluteMoniker": "D:0:0:{49E08E89-7A13-4953-8E3A-7BF88BA4300A}|Dump1090_SBSParser.vcxproj|C:\\source\\gitinternal\\DUMP1090_SBS_Parser\\ASX_CAT21.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}",
-      "RelativeMoniker": "D:0:0:{49E08E89-7A13-4953-8E3A-7BF88BA4300A}|Dump1090_SBSParser.vcxproj|solutionrelative:ASX_CAT21.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}"
-    },
-    {
       "AbsoluteMoniker": "D:0:0:{49E08E89-7A13-4953-8E3A-7BF88BA4300A}|Dump1090_SBSParser.vcxproj|C:\\source\\gitinternal\\DUMP1090_SBS_Parser\\SBS_Reader.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}",
       "RelativeMoniker": "D:0:0:{49E08E89-7A13-4953-8E3A-7BF88BA4300A}|Dump1090_SBSParser.vcxproj|solutionrelative:SBS_Reader.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}"
     },
     {
       "AbsoluteMoniker": "D:0:0:{49E08E89-7A13-4953-8E3A-7BF88BA4300A}|Dump1090_SBSParser.vcxproj|C:\\source\\gitinternal\\DUMP1090_SBS_Parser\\BG_Curses.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}",
       "RelativeMoniker": "D:0:0:{49E08E89-7A13-4953-8E3A-7BF88BA4300A}|Dump1090_SBSParser.vcxproj|solutionrelative:BG_Curses.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{49E08E89-7A13-4953-8E3A-7BF88BA4300A}|Dump1090_SBSParser.vcxproj|C:\\source\\gitinternal\\DUMP1090_SBS_Parser\\ASX_CAT21.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}",
+      "RelativeMoniker": "D:0:0:{49E08E89-7A13-4953-8E3A-7BF88BA4300A}|Dump1090_SBSParser.vcxproj|solutionrelative:ASX_CAT21.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}"
     },
     {
       "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Tools\\MSVC\\14.40.33807\\include\\vector||{3B902123-F8A7-4915-9F01-361F908088D0}|"
@@ -25,7 +25,7 @@
       "DocumentGroups": [
         {
           "DockedHeight": 336,
-          "SelectedChildIndex": 4,
+          "SelectedChildIndex": 3,
           "Children": [
             {
               "$type": "Bookmark",
@@ -45,38 +45,39 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 2,
+              "DocumentIndex": 1,
               "Title": "BG_Curses.cpp",
               "DocumentMoniker": "C:\\source\\gitinternal\\DUMP1090_SBS_Parser\\BG_Curses.cpp",
               "RelativeDocumentMoniker": "BG_Curses.cpp",
               "ToolTip": "C:\\source\\gitinternal\\DUMP1090_SBS_Parser\\BG_Curses.cpp",
               "RelativeToolTip": "BG_Curses.cpp",
-              "ViewState": "AQIAAAcAAAAAAAAAAAAswDQAAAAWAAAA",
+              "ViewState": "AQIAAAAAAAAAAAAAAAAAADQAAAAWAAAA",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000677|",
-              "WhenOpened": "2024-08-12T02:15:51.289Z"
+              "WhenOpened": "2024-08-12T02:15:51.289Z",
+              "EditorCaption": ""
             },
             {
               "$type": "Document",
-              "DocumentIndex": 1,
+              "DocumentIndex": 0,
               "Title": "SBS_Reader.cpp",
               "DocumentMoniker": "C:\\source\\gitinternal\\DUMP1090_SBS_Parser\\SBS_Reader.cpp",
               "RelativeDocumentMoniker": "SBS_Reader.cpp",
               "ToolTip": "C:\\source\\gitinternal\\DUMP1090_SBS_Parser\\SBS_Reader.cpp",
               "RelativeToolTip": "SBS_Reader.cpp",
-              "ViewState": "AQIAAJQAAAAAAAAAAAAiwF8BAAAvAAAA",
+              "ViewState": "AQIAAGcCAAAAAAAAAAAmwJACAAAyAAAA",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000677|",
               "WhenOpened": "2024-08-12T02:04:56.532Z",
               "EditorCaption": ""
             },
             {
               "$type": "Document",
-              "DocumentIndex": 0,
+              "DocumentIndex": 2,
               "Title": "ASX_CAT21.cpp",
               "DocumentMoniker": "C:\\source\\gitinternal\\DUMP1090_SBS_Parser\\ASX_CAT21.cpp",
               "RelativeDocumentMoniker": "ASX_CAT21.cpp",
               "ToolTip": "C:\\source\\gitinternal\\DUMP1090_SBS_Parser\\ASX_CAT21.cpp",
               "RelativeToolTip": "ASX_CAT21.cpp",
-              "ViewState": "AQIAAL4BAAAAAAAAAAAiwCsCAAAEAAAA",
+              "ViewState": "AQIAAOwBAAAAAAAAAAAiwCsCAAAEAAAA",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000677|",
               "WhenOpened": "2024-08-12T00:16:56.02Z",
               "EditorCaption": ""

@@ -1,18 +1,10 @@
-﻿  ASX_CAT21.cpp
-  BG_Curses.cpp
-C:\source\gitinternal\DUMP1090_SBS_Parser\ASX_CAT21.cpp(254,16): warning C4244: 'initializing': conversion from 'double' to 'int', possible loss of data
-C:\source\gitinternal\DUMP1090_SBS_Parser\ASX_CAT21.cpp(614,57): warning C4244: 'argument': conversion from 'double' to 'int', possible loss of data
-C:\source\gitinternal\DUMP1090_SBS_Parser\ASX_CAT21.cpp(614,44): warning C4244: 'argument': conversion from 'double' to 'int', possible loss of data
-C:\source\gitinternal\DUMP1090_SBS_Parser\curses.h(190,9): warning C4005: 'MOUSE_MOVED': macro redefinition
-  BG_Utility.cpp
-  BG_Winsock.cpp
-C:\source\gitinternal\DUMP1090_SBS_Parser\BG_Winsock.cpp(81,31): warning C4244: '=': conversion from 'SOCKET' to 'int', possible loss of data
-  SBS_Reader.cpp
+﻿  SBS_Reader.cpp
 C:\source\gitinternal\DUMP1090_SBS_Parser\curses.h(190,9): warning C4005: 'MOUSE_MOVED': macro redefinition
 C:\source\gitinternal\DUMP1090_SBS_Parser\SBS_Reader.cpp(620,17): warning C4267: 'initializing': conversion from 'size_t' to 'int', possible loss of data
-  Previous IPDB not found, fall back to full compilation.
 LINK : warning LNK4098: defaultlib 'LIBCMT' conflicts with use of other libs; use /NODEFAULTLIB:library
   Generating code
-  All 330 functions were compiled because no usable IPDB/IOBJ from previous compilation was found.
+  4 of 335 functions ( 1.2%) were compiled, the rest were copied from previous compilation.
+    0 functions were new in current compilation
+    2 functions had inline decision re-evaluated but remain unchanged
   Finished generating code
   Dump1090_SBSParser.vcxproj -> C:\source\gitinternal\DUMP1090_SBS_Parser\x64\Release\Dump1090_SBSParser.exe

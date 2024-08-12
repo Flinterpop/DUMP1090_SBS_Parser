@@ -626,6 +626,7 @@ void CursesPrintACList()
     const char* colNames[] = { "ICAO","CS","Mode A","Age","#Msg","Lat","Lon","Alt","GS","TRK", "1","2","3","4","5","6","7",   "8","TN", "VR"};
 
     clear();
+    attron(COLOR_PAIR(0));
     int r = 0;
     //mvprintw(r++, 0, "ICAO    CS      Squawk  Age   #Msg  Lat       Lon        Alt     GS    TRK     1   2   3   4   5   6   7   8");
     for (int c = 0;c < numCols;c++)
@@ -641,6 +642,7 @@ void CursesPrintACList()
     {
         if (a->NewTrack > 0) attron(COLOR_PAIR(3));
         else if (a->age > (dropAfterAge - 5)) attron(COLOR_PAIR(2));
+        else attron(COLOR_PAIR(0));
 
         mvprintw(r, ColStart[0], "%6s", a->ICAO);
         mvprintw(r, ColStart[1], "%s", a->CS);
@@ -662,12 +664,14 @@ void CursesPrintACList()
 
         if (a->NewTrack > 0) attroff(COLOR_PAIR(3));
         else if (a->age < (dropAfterAge - 5)) attroff(COLOR_PAIR(2));
-
+        else attroff(COLOR_PAIR(0));
         ++r;
     }
+    mvprintw(r++, 0, "---------------------------------------------------------------------------------------------------------------------");
 
     mvprintw(r++, 0, "Sort By: %s  Press h for help", sortByName[sortBy]);
     bgc_ShowLog(r);
+    attroff(COLOR_PAIR(0));
     refresh();
 }
 
