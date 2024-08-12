@@ -621,7 +621,7 @@ void CursesPrintACList()
     SetConsoleSize(128, numRows);
 
     int numCols = 20;
-    int ColHdgStart[40] = {      0,     9,   17,      24,   29,    36,   46,   54,   61,  69,   76, 80, 84, 89, 94, 98, 102, 106, 109 ,113};
+    int ColHdgStart[40] = {      0,     9,   17,      24,   29,    36,   46,   54,   61,  69,   76, 80, 84, 89, 94, 98, 102, 106, 109 ,114};
     int ColStart[40] = {         0,     9,   17,      24,   29,    35,   44,   53,   60,  68,   74, 78, 82, 87, 92, 96, 100, 104, 109 ,112};
     const char* colNames[] = { "ICAO","CS","Mode A","Age","#Msg","Lat","Lon","Alt","GS","TRK", "1","2","3","4","5","6","7",   "8","TN", "VR"};
 
@@ -636,39 +636,36 @@ void CursesPrintACList()
     ++r;
 
     mvchgat(0, 0, -1, A_BLINK, 1, NULL);
-    mvprintw(r++, 0, "---------------------------------------------------------------------------------------------------------------------");
+    mvprintw(r++, 0, "----------------------------------------------------------------------------------------------------------------_-----");
 
     for (auto a : ACList)
     {
-        if (a->NewTrack > 0) attron(COLOR_PAIR(3));
-        else if (a->age > (dropAfterAge - 5)) attron(COLOR_PAIR(2));
-        else attron(COLOR_PAIR(0));
-
-        mvprintw(r, ColStart[0], "%6s", a->ICAO);
-        mvprintw(r, ColStart[1], "%s", a->CS);
-        mvprintw(r, ColStart[2], "%4s", a->Squawk);
-        mvprintw(r, ColStart[3], "%3d", a->age);
-        mvprintw(r, ColStart[4], "%4d", a->numMessages);
-        mvprintw(r, ColStart[5], "%7.4f", a->Lat);
-        mvprintw(r, ColStart[6], "%8.4f", a->Lon);
-
-        mvprintw(r, ColStart[7], "%5d", a->Altitude);
-        mvprintw(r, ColStart[8], "%5.1f", a->GS);
-        mvprintw(r, ColStart[9], "%5.1f", a->Trk);
-        for (int i = 1;i <= 8;i++)
+        int cp = 0;
+        if (a->NewTrack > 0)  cp = 3;
+        else if (a->age > (dropAfterAge - 5)) cp = 2;
+        //else cp = 0;
+        attron(COLOR_PAIR(cp));
         {
-            mvprintw(r, ColStart[9 + i], "%3d", a->TTCounts[i]);
-        }
-        mvprintw(r, ColStart[9 + 9], "%d", a->TrkNum);
-        mvprintw(r, ColStart[9 + 9 + 1], " %4d", (int)a->VerticalRate);
+            mvprintw(r, ColStart[0], "%6s", a->ICAO);
+            mvprintw(r, ColStart[1], "%s", a->CS);
+            mvprintw(r, ColStart[2], "%4s", a->Squawk);
+            mvprintw(r, ColStart[3], "%3d", a->age);
+            mvprintw(r, ColStart[4], "%4d", a->numMessages);
+            mvprintw(r, ColStart[5], "%7.4f", a->Lat);
+            mvprintw(r, ColStart[6], "%8.4f", a->Lon);
 
-        if (a->NewTrack > 0) attroff(COLOR_PAIR(3));
-        else if (a->age < (dropAfterAge - 5)) attroff(COLOR_PAIR(2));
-        else attroff(COLOR_PAIR(0));
+            mvprintw(r, ColStart[7], "%5d", a->Altitude);
+            mvprintw(r, ColStart[8], "%5.1f", a->GS);
+            mvprintw(r, ColStart[9], "%5.1f", a->Trk);
+            for (int i = 1;i <= 8;i++) mvprintw(r, ColStart[9 + i], "%3d", a->TTCounts[i]);
+            mvprintw(r, ColStart[9 + 9], "%d", a->TrkNum);
+            mvprintw(r, ColStart[9 + 9 + 1], " %5d", (int)a->VerticalRate);
+        }
+        attroff(COLOR_PAIR(cp));
         ++r;
     }
-    mvprintw(r++, 0, "---------------------------------------------------------------------------------------------------------------------");
-
+    mvprintw(r++, 0, "----------------------------------------------------------------------------------------------------------------------");
+    mvprintw(r++, 0, "Tracking %d aircraft", ACList.size());
     mvprintw(r++, 0, "Sort By: %s  Press h for help", sortByName[sortBy]);
     bgc_ShowLog(r);
     attroff(COLOR_PAIR(0));

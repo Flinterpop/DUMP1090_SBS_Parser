@@ -1,10 +1,1 @@
-﻿  SBS_Reader.cpp
-C:\source\gitinternal\DUMP1090_SBS_Parser\curses.h(190,9): warning C4005: 'MOUSE_MOVED': macro redefinition
-C:\source\gitinternal\DUMP1090_SBS_Parser\SBS_Reader.cpp(620,17): warning C4267: 'initializing': conversion from 'size_t' to 'int', possible loss of data
-LINK : warning LNK4098: defaultlib 'LIBCMT' conflicts with use of other libs; use /NODEFAULTLIB:library
-  Generating code
-  4 of 335 functions ( 1.2%) were compiled, the rest were copied from previous compilation.
-    0 functions were new in current compilation
-    8 functions had inline decision re-evaluated but remain unchanged
-  Finished generating code
-  Dump1090_SBSParser.vcxproj -> C:\source\gitinternal\DUMP1090_SBS_Parser\x64\Release\Dump1090_SBSParser.exe
+﻿C:\Program Files\Microsoft Visual Studio\2022\Community\MSBuild\Microsoft\VC\v170\Microsoft.CppClean.targets(77,5): warning : Access to the path 'c:\source\gitinternal\dump1090_sbs_parser\x64\release\dump1090_sbsparser.exe' is denied.
