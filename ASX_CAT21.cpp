@@ -445,7 +445,123 @@ int BuildCAT21FromADSB(Aircraft_SBS* ADSB_AC)
 
 int CreateCAT21SITAWARE(Aircraft_SBS* ADSB_AC)
 {
-    return 0;
+    std::vector<int> FRNsToSend;      //this is empty unlesss populated outside of this file by settings in the UI or config file
+    FRNsToSend.clear();
+
+    //this CAT21 is compliant to Sitaware
+    FRNsToSend.push_back(1);
+    FRNsToSend.push_back(2);
+    FRNsToSend.push_back(3);
+    FRNsToSend.push_back(4);
+    FRNsToSend.push_back(5);
+    FRNsToSend.push_back(7);
+    FRNsToSend.push_back(8);
+    FRNsToSend.push_back(18);
+    FRNsToSend.push_back(21);
+    FRNsToSend.push_back(22);
+
+
+    //if (ADSB_AC->bHasSquawk) 
+    FRNsToSend.push_back(6);
+    //if (ADSB_AC->bHasSquawk) 
+    FRNsToSend.push_back(10);
+    //if (ADSB_AC->bHasAltBaro) 
+    FRNsToSend.push_back(16);
+    //if (ADSB_AC->bHasMagHdg) 
+    FRNsToSend.push_back(22);
+    //if (ADSB_AC->bHasMagHdg) 
+    FRNsToSend.push_back(27);
+
+    //build the FSPEC (next ~75 lines)
+    int FSPEC[6] = { 0,0,0,0,0,0 };
+
+    unsigned char m_FRN[50];
+    //builds a bit map lookup table for each of the FRNs. ASX CAT 21 supports 49 FRNs: 1 thru 49
+    for (int x = 1; x <= 49; x++) m_FRN[x] = 0b10000000 >> ((x - 1) % 7);
+
+    for (int frn : FRNsToSend)
+    {
+        int _index = (frn - 1) / 7;
+        FSPEC[_index] |= m_FRN[frn];
+        //printf("Adding FRN %d  index: %d, FRN Bits:%X\r\n", frn, _index, m_FRN[frn]);
+    }
+
+
+
+
+    //add the extension bit if required
+    if (FSPEC[5] != 0)
+    {
+        FSPEC[4] |= FRNFX;
+        FSPEC[3] |= FRNFX;
+        FSPEC[2] |= FRNFX;
+        FSPEC[1] |= FRNFX;
+        FSPEC[0] |= FRNFX;
+    }
+    else if (FSPEC[4] != 0)
+    {
+        FSPEC[3] |= FRNFX;
+        FSPEC[2] |= FRNFX;
+        FSPEC[1] |= FRNFX;
+        FSPEC[0] |= FRNFX;
+    }
+    else if (FSPEC[3] != 0)
+    {
+        FSPEC[2] |= FRNFX;
+        FSPEC[1] |= FRNFX;
+        FSPEC[0] |= FRNFX;
+    }
+    else if (FSPEC[2] != 0)
+    {
+        FSPEC[1] |= FRNFX;
+        FSPEC[0] |= FRNFX;
+    }
+    else if (FSPEC[1] != 0)
+    {
+        FSPEC[0] |= FRNFX;
+    }
+
+
+    //Start building the ASTERIX Message
+    index = 0; //reset the index
+    _MSG[index++] = 21;     //ASTERIX CAT 21
+    _MSG[index++] = 0;      //LEN MSB    these are placeholders that will be filled in later
+    _MSG[index++] = 0;      //LEN LSB
+
+
+    _MSG[index++] = FSPEC[0];
+    if (FSPEC[0] & FRNFX) _MSG[index++] = FSPEC[1];
+    if (FSPEC[1] & FRNFX) _MSG[index++] = FSPEC[2];
+    if (FSPEC[2] & FRNFX) _MSG[index++] = FSPEC[3];
+    if (FSPEC[3] & FRNFX) _MSG[index++] = FSPEC[4]; //this will never happen with this implementation. FSPEC[4] only contains RE and SP
+
+    InsertSAC_SIC_DI010(); //FRN 1 Mandatory
+    InsertTargetReportDescriptorDI040(); //FRN 2 M
+    InsertTimeOfDayDI030(); //FRN 3 M
+    InsertPositionDI130_4BytePos(ADSB_AC->Lat, ADSB_AC->Lon);   //FRN 4 M
+    InsertAC_ICAO_Address_DI80(ADSB_AC->ICAO_i);
+
+    if (std::find(FRNsToSend.begin(), FRNsToSend.end(), 6) != FRNsToSend.end())
+        InsertGeoHeightDI140(ADSB_AC->Altitude); // FRN 6 Optional
+
+    InsertFOM_DI090();   //FRN 7 M
+    InsertLinkTechnologyDI210();    // FRN 8 M
+
+
+    if (std::find(FRNsToSend.begin(), FRNsToSend.end(), 10) != FRNsToSend.end())
+        InsertFLDI145(ADSB_AC->Altitude);// FRN 10 Optional
+    if (std::find(FRNsToSend.begin(), FRNsToSend.end(), 16) != FRNsToSend.end())
+        InsertAirborneGroundVectorDI160(ADSB_AC->GS, ADSB_AC->Trk);// FRN 16 Optional  ias and true heading may be wrong
+
+    Insert_ACIdent_DI170(ADSB_AC->CS); //was Ident
+    InsertTargetStatusDI200(); // FRN 21 M
+    InsertEmitterCategoryDI020(0); //FRN 22
+
+    if (std::find(FRNsToSend.begin(), FRNsToSend.end(), 27) != FRNsToSend.end())
+        InsertMode3ADI070(ADSB_AC->Squawk_i);
+
+    UpdateMsgLength(index);
+    return index;
 }
 
 

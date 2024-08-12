@@ -462,7 +462,7 @@ void parseSBSBuffer(char* line, int lineLength)
             ac->VerticalRate = strtod(tokenList[17], NULL);
 
             if (g_debug) printf("Msg Type 4: GS %f  Trk %f VF: %f\r\n", ac->GS, ac->Trk, ac->VerticalRate);
-            bgc_LOG_printf("Msg Type 4: GS %f  Trk %f VF: %f", ac->GS, ac->Trk, ac->VerticalRate);
+            //bgc_LOG_printf("Msg Type 4: GS %f  Trk %f VF: %f", ac->GS, ac->Trk, ac->VerticalRate);
             break;
         }
         case 5:
