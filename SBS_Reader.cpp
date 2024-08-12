@@ -186,7 +186,7 @@ void ReadIniFile()
 
 
     printf("Attempting to read .ini file\r\n");
-    LPCTSTR inipath = L".\\ADSBtoCAT21.ini";
+    LPCTSTR inipath = L".\\Dump1090_SBSParser.ini";
     if (!bgu_FileExists(inipath))
     {
         std::cout << "no ini file ";
