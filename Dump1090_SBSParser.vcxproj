@@ -127,6 +127,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="ASX_CAT21.cpp" />
     <ClCompile Include="BG_Curses.cpp" />
     <ClCompile Include="BG_Utility.cpp" />
     <ClCompile Include="BG_Winsock.cpp" />
@@ -136,6 +137,8 @@
     <Library Include="pdcurses.lib" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Aircraft_SBS.h" />
+    <ClInclude Include="ASX_CAT21.h" />
     <ClInclude Include="BG_Curses.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

@@ -1,52 +1,43 @@
-// ConsoleTemplate.cpp : This file contains the 'main' function. Program execution begins and ends there.
+// SBS_Reader.cpp : This file contains the 'main' function. Program execution begins and ends there.
 //
 
-
-#define BMG_VERSION 1.0
+#define BMG_VERSION 1.1
 
 #include <iostream>
 #include <vector>
 #include <set>
 #include <algorithm> //has sort
-
 #include <conio.h>
 
 #include "BG_Winsock.h"
 #include "BG_Utility.h"
 #include "BG_Curses.h"
 
+#include "Aircraft_SBS.h"
+#include "ASX_CAT21.h"
 
 #define CURSES
 #include "curses.h"
 
-
-
-
-
 bool g_debug = false;
 
 #define BUFLEN 1510  
-byte _MSG[1500];
-int _MSGLength;
 int RxPacketCount = 0;
 int RxMSGCount = 0;
 int TxPacketCount = 0;
 
-
 char TCPListen_IP[20] = "192.168.1.133";
 int TCPListen_Port = 30003;
 
-char UDPSend_IP[20] = "239.255.1.1";
-int UDPSend_Port = 5055;
-
-
+char UDPSend_IP[20] = "192.168.1.255";
+int UDPSend_Port = 4000;
 
 bool bPeriodicList = true;
 
 //forward declarations
 void ReadIniFile();
-void PrintMenu();
 void mainConsoleLoop();
+void PrintHelp();
 
 HANDLE ptrToTimerHandle;
 void __stdcall MainTimerCallback(PVOID, BOOLEAN);
@@ -54,33 +45,8 @@ void __stdcall MainTimerCallback(PVOID, BOOLEAN);
 DWORD WINAPI TCPListenThread(LPVOID lpParam);
 
 
-//APP Specific Code
 
-struct Aircraft_SBS
-{
-    char ICAO[10];
-    int TTCounts[9];
-
-    char CS[10];
-    int Altitude;
-    double GS;
-    double Trk;
-    double Lat;
-    double Lon;
-    double VerticalRate;
-    char Squawk[10];
-    int AlertFlag;
-    int EmergFlag;
-    int SPIFlag;
-    int GndFlag;
-
-    int age = 0;
-    int numMessages;
-    std::set<int> TranTypesRx;
-
-    int TrkNum;
-
-};
+//ADS Specific Init
 std::vector<Aircraft_SBS*> ACList;
 int dropAfterAge = 30;
 int nonMSG = 0;
@@ -94,21 +60,16 @@ SORT_BY sortBy = TRK_NUM;
 
 void parseSBSBuffer(char* line, int lineLength);
 Aircraft_SBS* FindAC(char* ICAO);
-void PrintACList();
 void CursesPrintACList();
 
+// CAT21 Specific Init
+extern bool bMODERN;
 
-
-
-
+//Start of All Code
 
 int main()
 {
-
-
-#ifdef CURSES
     bgc_InitCurses();
-#endif
 
     ReadIniFile();
 
@@ -125,15 +86,12 @@ int main()
     }
 
     OpenUDPSocket(UDPSend_IP, UDPSend_Port);
-
-    PrintMenu();
+    
     mainConsoleLoop();
     
     closeandclean_winsock();
-#ifdef CURSES
-    bgc_StopCurses();
-#endif
-    
+
+    bgc_StopCurses();   
 }
 
 
@@ -180,15 +138,10 @@ DWORD WINAPI TCPListenThread(LPVOID lpParam)
                 thisLength++;
             }
 
-
             if (g_debug) printf("Num Lines this Buffer: %d\r\n", index);
 
             for (int q = 0;q < index;q++) parseSBSBuffer(msgs[q], msgLens[q]);
         }
-            
-        //SendUDP(buffer, recvLen);
-        //TxPacketCount++;
-      
     }
     return 0;
 }
@@ -198,20 +151,24 @@ void __stdcall MainTimerCallback(PVOID, BOOLEAN)//(PVOID lpParameter, BOOLEAN Ti
 {
     for (int x = 0; x < ACList.size(); x++)
     {
-        ++ACList[x]->age;
-        if (ACList[x]->age > dropAfterAge) ACList.erase(ACList.begin() + x);
+        if (ACList[x]->NewTrack > 0) --ACList[x]->NewTrack;
+        if (++ACList[x]->age > dropAfterAge) ACList.erase(ACList.begin() + x);
+
     }
 
     if (bPeriodicList)
     {
-        #ifdef CURSES
-            CursesPrintACList();
-        #else           
-            bgu_clearConsole();
-            PrintACList();
-        #endif
-
-
+        CursesPrintACList();
+    }
+    else
+    {
+        attron(COLOR_PAIR(2));
+        attron(A_BOLD);
+        mvprintw(0, 0, "Packets Rx: %d  MSG Rx: %d  Packets Tx: %d                                                                     ", RxPacketCount, RxMSGCount, TxPacketCount);
+        attroff(A_BOLD);
+        attroff(COLOR_PAIR(2));
+        
+        refresh();
     }
 }
 
@@ -247,31 +204,70 @@ void ReadIniFile()
     GetPrivateProfileString(L"Form", L"TCPListen_IP", L"192.168.1.133", wide_IP, 20, inipath);
     size_t charsConverted = 0;
     wcstombs_s(&charsConverted, TCPListen_IP, 20, wide_IP, 20);
-
-    GetPrivateProfileString(L"Form", L"UDPSend_IP", L"239.255.1.1", wide_IP, 20, inipath);
-    wcstombs_s(&charsConverted, UDPSend_IP, 20, wide_IP, 20);
-
     TCPListen_Port = GetPrivateProfileInt(L"Form", L"TCPListen_PORT", 30003, inipath);
-    UDPSend_Port = GetPrivateProfileInt(L"Form", L"UDPSend_PORT", 5055, inipath);
+
+    GetPrivateProfileString(L"Form", L"UDPSend_IP", L"192.168.1.255", wide_IP, 20, inipath);
+    wcstombs_s(&charsConverted, UDPSend_IP, 20, wide_IP, 20);
+    UDPSend_Port = GetPrivateProfileInt(L"Form", L"UDPSend_PORT", 4000, inipath);
+
     printf("INI: TCPListen: Port: %d  IP: %s \r\n", TCPListen_Port, TCPListen_IP);
     printf("INI: UDP_Send: Port: %d  IP: %s \r\n", UDPSend_Port, UDPSend_IP);
 
+
+
+    int sic = GetPrivateProfileInt(L"Form", L"CAT21_SIC", 16, inipath);
+    int sac = GetPrivateProfileInt(L"Form", L"CAT21_SAC", 204, inipath);
+    SetSIC_SAC(sic, sac);
+
+    dropAfterAge = GetPrivateProfileInt(L"Form", L"DropAfterAge", 30, inipath);
+    printf("INI: Age Out time: %d\r\n", dropAfterAge);
+
+    int t = GetPrivateProfileInt(L"Form", L"CAT21_is_SITAWARE", 0, inipath);
+    if (t == 1) bMODERN = false;
+    else bMODERN = true;
+
+
     printf("Done reading .ini file\r\n----------------------\r\n");
-
-
 }
 
-void PrintMenu()
+void PrintHelp()
 {
-    printf("Console Template. V%f Compiled %s\r\n", BMG_VERSION, __DATE__);
-    printf("Visual Studio version:%d\r\n", _MSC_VER);
+    SetConsoleSize(128, 60);
+    bPeriodicList=false;
+    clear();
+    int r = 1;
+    mvprintw(r++, 0, "Console Template. V%f Compiled %s", BMG_VERSION, __DATE__);
+    mvprintw(r++, 0, "Visual Studio version : % d", _MSC_VER);
 
-    printf("Receiving TCP via Telnet on %s:%d\r\n", TCPListen_IP, TCPListen_Port);
-    printf("Transmitting UDP on %s:%d\r\n", UDPSend_IP, UDPSend_Port);
-    printf("Packets Rx: %d  MSG Rx: %d  Packets Tx: %d\r\n", RxPacketCount, RxMSGCount, TxPacketCount);
+    mvprintw(r++, 0, "Receiving TCP via Telnet on %s:%d", TCPListen_IP, TCPListen_Port);
+    mvprintw(r++, 0, "Transmitting UDP on %s:%d", UDPSend_IP, UDPSend_Port);
+    mvprintw(r++, 0, "Packets Rx: %d  MSG Rx: %d  Packets Tx: %d", RxPacketCount, RxMSGCount, TxPacketCount);
+    mvprintw(r++, 0, "CAT21 SIC: %d  SAC: %d", GetSIC(),GetSAC());
+    mvprintw(r++, 0, "Track Timeout: %d", dropAfterAge);
+    mvprintw(r++, 0, "CAT21 Type: %s", bMODERN ? "Modern" : "SITAWARE");
+    mvprintw(r++, 0, "Debug is %s", g_debug ? "ON" : "OFF");
+    mvprintw(r++, 0, "LINES: %d  COLS: %d", LINES, COLS);
+    int cols, rows;
+    GetConsoleSize(&cols, &rows);
+    mvprintw(r++, 0, "Console size: cols:%d  rows:%d", cols, rows);
+    GetConsoleBufferSize(&cols, &rows);
+    mvprintw(r++, 0, "Console Buffer size: cols:%d  rows:%d", cols, rows);
+    mvprintw(r++, 0, "Num Non MSG Rx: %d", nonMSG);
 
-    printf("Commands:\t\n----------\r\nx - eXit\r\ns - Sort By\r\nt - CAT21 Type: Modern or SITAWARE\r\nl - List\r\np - Periodic List\r\nd - debug\r\n");
-    printf("This app is always running even if display is not refreshing\r\n");
+    mvprintw(r++, 0, "Commands:");
+    mvprintw(r++, 0, "a - Test Log");
+    mvprintw(r++, 0, "c - Reset Curses (reset window)");
+    mvprintw(r++, 0, "d - debug");
+    mvprintw(r++, 0, "h - Help - this list");
+    mvprintw(r++, 0, "l - ADS-B Aircraft List");
+    mvprintw(r++, 0, "p - Toggle Periodic List");
+    mvprintw(r++, 0, "s - Sort By");
+    mvprintw(r++, 0, "t - Toggle CAT21 Type: Modern or SITAWARE");
+    mvprintw(r++, 0, "x - eXit");
+    mvprintw(r++, 0, "This app is always running even if display is not refreshing");
+    mvprintw(r++, 0, "Hit p or P to resume periodic listing");
+    bgc_ShowLog(r);
+    refresh();
 }
 
 void mainConsoleLoop()
@@ -284,8 +280,8 @@ void mainConsoleLoop()
             int ch = _getch();
             switch (ch)
             {
-            case 't':
-            case 'T':
+            case 'a':
+            case 'A':
                 {
                 static int TL = 0;
                 bgc_LOG_printf("Test Log: %d", TL++);
@@ -297,11 +293,14 @@ void mainConsoleLoop()
                 bgc_StopCurses();
                 bgc_InitCurses();
                 break;
-
             case 'd':
             case 'D':
                 g_debug = !g_debug;
                 printf("Debug is %d\r\n", g_debug);
+                break;
+            case 'h':
+            case 'H':
+                PrintHelp();
                 break;
             case 'l':
             case 'L':
@@ -318,13 +317,20 @@ void mainConsoleLoop()
                 ++(int&)sortBy;
                 if (sortBy >= numSortTypes) sortBy = TRK_NUM;
                 break;
+
+            case 't':
+            case 'T':
+                bMODERN = !bMODERN;
+                if (bMODERN) printf("Switched to Modern CAT21\r\n");
+                else printf("Switched to SITAWARE CAT21\r\n");
+                break;
             case 'x':
             case 'X':
                 done = true;
                 break;
 
             default:
-                PrintMenu();
+                break;
             }
             printf("Press h for help\r\n");
         }
@@ -379,37 +385,40 @@ void parseSBSBuffer(char* line, int lineLength)
         }
     }
 
-
     //decode the MSG line
     if (!strcmp(tokenList[1], "MSG"))
     {
         RxMSGCount++;
 
         Aircraft_SBS* ac = FindAC(tokenList[5]); //tokenList[5] is ICAO
-        if (ac == NULL) //new track
+        if (ac == NULL) //new track so initialize some parameters
         {
             if (g_debug) printf("First Rx of %s\r\n", tokenList[5]); //ICAO
+            
             ac = new Aircraft_SBS;
+
+            ac->NewTrack = 5; //used to highlight the new track for 5 cycles
             strcpy_s(ac->ICAO, 10, tokenList[5]); //ICAO
+            ac->ICAO_i= (int)strtol(tokenList[5], NULL, 16);
             ac->Squawk[0] = 0;
-            ac->age = 0;
+            ac->Squawk_i = 0;
             ac->Lat = 0;
             ac->Lon = 0;
             ac->Altitude = 0;
             ac->GS = 0;
             ac->Trk = 0;
-            ac->numMessages = 1;
+            ac->numMessages = 0;
             ac->CS[0] = 0;
             ac->TrkNum = TrkBlk++;
+            ac->VerticalRate = 0;
             for (int i = 0;i < 9;i++) ac->TTCounts[i] = 0;
             ACList.push_back(ac);
         }
-        else //old track sp update some metadata
-        {
-            ac->age = 0;
-            ++ac->numMessages;
-        }
 
+        ac->age = 0;
+        ++ac->numMessages;
+
+        //Now extract track data from this Messages Tokens
         int TransmissionType = strtol(tokenList[2], NULL, 10);
         if (g_debug) printf("Trans Type: %d  for ICAO %s >", TransmissionType, tokenList[5]);
         ac->TranTypesRx.insert(TransmissionType);
@@ -453,6 +462,7 @@ void parseSBSBuffer(char* line, int lineLength)
             ac->VerticalRate = strtod(tokenList[17], NULL);
 
             if (g_debug) printf("Msg Type 4: GS %f  Trk %f VF: %f\r\n", ac->GS, ac->Trk, ac->VerticalRate);
+            bgc_LOG_printf("Msg Type 4: GS %f  Trk %f VF: %f", ac->GS, ac->Trk, ac->VerticalRate);
             break;
         }
         case 5:
@@ -468,6 +478,7 @@ void parseSBSBuffer(char* line, int lineLength)
         {
             ac->Altitude = strtol(tokenList[12], NULL, 10);
             strcpy_s(ac->Squawk, 10, tokenList[18]);
+            ac->Squawk_i = (int)strtol(tokenList[18], NULL, 8);
             //strcpy_s(LOGLine, 10, tokenList[18]);
             printf(tokenList[18]);
 
@@ -494,7 +505,13 @@ void parseSBSBuffer(char* line, int lineLength)
         default:
             break;
         }
+
+        ByteBuffer bb = BuildCAT21FromAicraft_ADSB(ac);
+        SendUDP(bb.buffer,bb.bufLength);
+        TxPacketCount++;
     }
+
+
     else if (!strcmp(tokenList[1], "STA"))
     {
         puts("Rx STA");
@@ -534,6 +551,7 @@ void parseSBSBuffer(char* line, int lineLength)
 
 }
 
+/*
 void PrintACList()
 {
     printf("ICAO    CS      Squawk  Age   #Msg  Lat       Lon        Alt     GS    TRK     1   2   3   4   5   6   7   8\r\n");
@@ -550,6 +568,8 @@ void PrintACList()
     }
     printf("Num Non MSG Rx: %d\r\n", nonMSG);
 }
+*/
+
 
 bool bgu_strcmp(char* s1, char* s2)
 {
@@ -597,13 +617,13 @@ void CursesPrintACList()
 {
     sort(ACList.begin(), ACList.end(), compareAC);
 
-    int numRows = ACList.size() + 10 + gbc_GetLogSize();
+    int numRows = max(40,ACList.size() + 10 + gbc_GetLogSize());
     SetConsoleSize(128, numRows);
 
-    int numCols = 19;
-    int ColHdgStart[40] = {      0,     9,   17,      24,   29,    36,   46,   54,   61,  69,   76, 80, 84, 89, 94, 98, 102, 106, 109 };
-    int ColStart[40] = {         0,     9,   17,      24,   29,    35,   44,   53,   60,  68,   74, 78, 82, 87, 92, 96, 100, 104, 109 };
-    const char* colNames[] = { "ICAO","CS","Mode A","Age","#Msg","Lat","Lon","Alt","GS","TRK", "1","2","3","4","5","6","7",   "8","TN" };
+    int numCols = 20;
+    int ColHdgStart[40] = {      0,     9,   17,      24,   29,    36,   46,   54,   61,  69,   76, 80, 84, 89, 94, 98, 102, 106, 109 ,113};
+    int ColStart[40] = {         0,     9,   17,      24,   29,    35,   44,   53,   60,  68,   74, 78, 82, 87, 92, 96, 100, 104, 109 ,112};
+    const char* colNames[] = { "ICAO","CS","Mode A","Age","#Msg","Lat","Lon","Alt","GS","TRK", "1","2","3","4","5","6","7",   "8","TN", "VR"};
 
     clear();
     int r = 0;
@@ -615,23 +635,17 @@ void CursesPrintACList()
     ++r;
 
     mvchgat(0, 0, -1, A_BLINK, 1, NULL);
-    mvprintw(r++, 0, "------------------------------------------------------------------------------------------------------------------");
+    mvprintw(r++, 0, "---------------------------------------------------------------------------------------------------------------------");
 
     for (auto a : ACList)
     {
+        if (a->NewTrack > 0) attron(COLOR_PAIR(3));
+        else if (a->age > (dropAfterAge - 5)) attron(COLOR_PAIR(2));
+
         mvprintw(r, ColStart[0], "%6s", a->ICAO);
         mvprintw(r, ColStart[1], "%s", a->CS);
         mvprintw(r, ColStart[2], "%4s", a->Squawk);
-        if (a->age > (dropAfterAge - 5))
-        {
-            attron(COLOR_PAIR(2));
-            attron(A_BOLD);
-            mvprintw(r, ColStart[3], "%3d", a->age);
-            attroff(A_BOLD);
-            attroff(COLOR_PAIR(2));
-        }
-        else mvprintw(r, ColStart[3], "%3d", a->age);
-
+        mvprintw(r, ColStart[3], "%3d", a->age);
         mvprintw(r, ColStart[4], "%4d", a->numMessages);
         mvprintw(r, ColStart[5], "%7.4f", a->Lat);
         mvprintw(r, ColStart[6], "%8.4f", a->Lon);
@@ -644,23 +658,19 @@ void CursesPrintACList()
             mvprintw(r, ColStart[9 + i], "%3d", a->TTCounts[i]);
         }
         mvprintw(r, ColStart[9 + 9], "%d", a->TrkNum);
+        mvprintw(r, ColStart[9 + 9 + 1], " %4d", (int)a->VerticalRate);
+
+        if (a->NewTrack > 0) attroff(COLOR_PAIR(3));
+        else if (a->age < (dropAfterAge - 5)) attroff(COLOR_PAIR(2));
+
         ++r;
     }
 
-    mvprintw(r++, 0, "Sort By: %s", sortByName[sortBy]);
-    mvprintw(r++, 0, "LINES: %d  COLS: %d",LINES,COLS);
-
-    mvprintw(r++, 0, "Num Non MSG Rx: %d", nonMSG);
-
-    int cols, rows;
-    GetConsoleSize(&cols, &rows);
-    mvprintw(r++, 0, "Console size: cols:%d  rows:%d", cols, rows);
-    GetConsoleBufferSize(&cols, &rows);
-    mvprintw(r++, 0, "Console Buffer size: cols:%d  rows:%d", cols, rows);
-
+    mvprintw(r++, 0, "Sort By: %s  Press h for help", sortByName[sortBy]);
     bgc_ShowLog(r);
     refresh();
 }
+
 
 
 

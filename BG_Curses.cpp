@@ -22,6 +22,7 @@ void bgc_InitCurses()
     start_color();			/* Start color functionality	*/
     init_pair(1, COLOR_CYAN, COLOR_BLACK);
     init_pair(2, COLOR_RED, COLOR_BLACK);
+    init_pair(3, COLOR_GREEN, COLOR_BLACK);
 
 }
 
@@ -51,7 +52,7 @@ void  bgc_LOG_printf(const char* fmt, ...)
 
 int bgc_ShowLog(int r)
 {
-    mvprintw(r++, 0, "Log:");
+    mvprintw(r++, 0, "Log has %d lines", CursesLOGIndex);
     if (CursesLOGIndex > 0)
         for (int x = 0;x < CursesLOGIndex;x++) mvprintw(r++, 0, "%02d: %s", x, CursesLOGLine[x]);
     return r;

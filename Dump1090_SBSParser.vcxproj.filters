@@ -27,12 +27,21 @@
     <ClCompile Include="BG_Curses.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="ASX_CAT21.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <Library Include="pdcurses.lib" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="BG_Curses.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="ASX_CAT21.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Aircraft_SBS.h">
       <Filter>Source Files</Filter>
     </ClInclude>
   </ItemGroup>
