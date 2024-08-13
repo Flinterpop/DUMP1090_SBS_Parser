@@ -11,4 +11,6 @@ int CreateCAT21SITAWARE(Aircraft_SBS* ADSB_AC);
 void SetSIC_SAC(int sic, int sac);
 int GetSIC();
 int GetSAC();
+bool isModernCAT21();
+void SetModernCAT21(bool b);
 

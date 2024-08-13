@@ -74,7 +74,15 @@ int index = 0;
 int sac = 204;
 int sic = 16;
 
+bool isModernCAT21()
+{
+    return bMODERN;
+}
 
+void SetModernCAT21(bool b)
+{
+    bMODERN = b;
+}
 void SetSIC_SAC(int _sic, int _sac)
 {
     sac = _sac;
@@ -360,9 +368,9 @@ void Insert_ACIdent_DI170(char* ACIdent)
 }
 
 //HARD CODED
-void InsertTargetStatusDI200()
+void InsertTargetStatusDI200(unsigned char status)
 {
-    _MSG[index++] = 0b00000000;
+    _MSG[index++] = status;
 }
 
 //HARD CODED
@@ -449,28 +457,28 @@ int CreateCAT21SITAWARE(Aircraft_SBS* ADSB_AC)
     FRNsToSend.clear();
 
     //this CAT21 is compliant to Sitaware
-    FRNsToSend.push_back(1);
-    FRNsToSend.push_back(2);
-    FRNsToSend.push_back(3);
-    FRNsToSend.push_back(4);
-    FRNsToSend.push_back(5);
-    FRNsToSend.push_back(7);
-    FRNsToSend.push_back(8);
-    FRNsToSend.push_back(18);
-    FRNsToSend.push_back(21);
-    FRNsToSend.push_back(22);
+    FRNsToSend.push_back(1);  //DI010 Data Src ID
+    FRNsToSend.push_back(2);  //DI040  Tgt Report Descriptor
+    FRNsToSend.push_back(3);  //DI030 TOD
+    
+    if (ADSB_AC->TTCounts[2] > 0) FRNsToSend.push_back(4);  //DI 130  Pos WGS84
+    if (ADSB_AC->TTCounts[3] > 0) FRNsToSend.push_back(4);  //DI 130  Pos WGS84
 
+    FRNsToSend.push_back(5);  //DI080 ICAO/Hex/ Tgt Address
+    if (ADSB_AC->TTCounts[3] > 0) FRNsToSend.push_back(6);  //DI 140 Geom Alt
+    
+    FRNsToSend.push_back(7);  //DI090 FOM
+    FRNsToSend.push_back(8);  //DI210 Link Technology
+    if (ADSB_AC->TTCounts[3] > 0) FRNsToSend.push_back(10); //DI 145 FL
 
-    //if (ADSB_AC->bHasSquawk) 
-    FRNsToSend.push_back(6);
-    //if (ADSB_AC->bHasSquawk) 
-    FRNsToSend.push_back(10);
-    //if (ADSB_AC->bHasAltBaro) 
-    FRNsToSend.push_back(16);
-    //if (ADSB_AC->bHasMagHdg) 
-    FRNsToSend.push_back(22);
-    //if (ADSB_AC->bHasMagHdg) 
-    FRNsToSend.push_back(27);
+    if (ADSB_AC->TTCounts[2] > 0) FRNsToSend.push_back(16);  //DI 160 Ground Vector
+    if (ADSB_AC->TTCounts[4] > 0) FRNsToSend.push_back(16);  //DI 160 Ground Vector
+    
+    if (ADSB_AC->TTCounts[1] > 0) FRNsToSend.push_back(18); //DI170 Target ID/CS/Flight
+    FRNsToSend.push_back(21); //DI200 Tgt Status
+    FRNsToSend.push_back(22); //DO020 Emitter Category
+    if (ADSB_AC->TTCounts[6] > 0) FRNsToSend.push_back(27); //{"FRN27: I021/070 Mode 3/A",MSG_STATE::OPT},
+
 
     //build the FSPEC (next ~75 lines)
     int FSPEC[6] = { 0,0,0,0,0,0 };
@@ -483,11 +491,7 @@ int CreateCAT21SITAWARE(Aircraft_SBS* ADSB_AC)
     {
         int _index = (frn - 1) / 7;
         FSPEC[_index] |= m_FRN[frn];
-        //printf("Adding FRN %d  index: %d, FRN Bits:%X\r\n", frn, _index, m_FRN[frn]);
     }
-
-
-
 
     //add the extension bit if required
     if (FSPEC[5] != 0)
@@ -538,8 +542,11 @@ int CreateCAT21SITAWARE(Aircraft_SBS* ADSB_AC)
     InsertSAC_SIC_DI010(); //FRN 1 Mandatory
     InsertTargetReportDescriptorDI040(); //FRN 2 M
     InsertTimeOfDayDI030(); //FRN 3 M
-    InsertPositionDI130_4BytePos(ADSB_AC->Lat, ADSB_AC->Lon);   //FRN 4 M
-    InsertAC_ICAO_Address_DI80(ADSB_AC->ICAO_i);
+    
+    if (std::find(FRNsToSend.begin(), FRNsToSend.end(), 4) != FRNsToSend.end())
+        InsertPositionDI130_4BytePos(ADSB_AC->Lat, ADSB_AC->Lon);   //FRN 4 M
+    
+    InsertAC_ICAO_Address_DI80(ADSB_AC->ICAO_i);  //FRN 5 M
 
     if (std::find(FRNsToSend.begin(), FRNsToSend.end(), 6) != FRNsToSend.end())
         InsertGeoHeightDI140(ADSB_AC->Altitude); // FRN 6 Optional
@@ -553,13 +560,15 @@ int CreateCAT21SITAWARE(Aircraft_SBS* ADSB_AC)
     if (std::find(FRNsToSend.begin(), FRNsToSend.end(), 16) != FRNsToSend.end())
         InsertAirborneGroundVectorDI160(ADSB_AC->GS, ADSB_AC->Trk);// FRN 16 Optional  ias and true heading may be wrong
 
-    Insert_ACIdent_DI170(ADSB_AC->CS); //was Ident
-    InsertTargetStatusDI200(); // FRN 21 M
-    InsertEmitterCategoryDI020(0); //FRN 22
+    if (std::find(FRNsToSend.begin(), FRNsToSend.end(), 18) != FRNsToSend.end()) 
+        Insert_ACIdent_DI170(ADSB_AC->CS); //Ident/flight/CS
 
+    InsertTargetStatusDI200(0); // FRN 21 M
+    
+    InsertEmitterCategoryDI020(0); //FRN 22
     if (std::find(FRNsToSend.begin(), FRNsToSend.end(), 27) != FRNsToSend.end())
         InsertMode3ADI070(ADSB_AC->Squawk_i);
-
+    
     UpdateMsgLength(index);
     return index;
 }

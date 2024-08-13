@@ -1,7 +1,7 @@
 // SBS_Reader.cpp : This file contains the 'main' function. Program execution begins and ends there.
 //
 
-#define BMG_VERSION 1.1
+#define BMG_VERSION 1.3
 
 #include <iostream>
 #include <vector>
@@ -19,9 +19,11 @@
 #define CURSES
 #include "curses.h"
 
-bool g_debug = false;
-
 #define BUFLEN 1510  
+
+bool g_debug = false;
+bool bPeriodicList = true;
+
 int RxPacketCount = 0;
 int RxMSGCount = 0;
 int TxPacketCount = 0;
@@ -32,8 +34,6 @@ int TCPListen_Port = 30003;
 char UDPSend_IP[20] = "192.168.1.255";
 int UDPSend_Port = 4000;
 
-bool bPeriodicList = true;
-
 //forward declarations
 void ReadIniFile();
 void mainConsoleLoop();
@@ -41,10 +41,7 @@ void PrintHelp();
 
 HANDLE ptrToTimerHandle;
 void __stdcall MainTimerCallback(PVOID, BOOLEAN);
-
 DWORD WINAPI TCPListenThread(LPVOID lpParam);
-
-
 
 //ADS Specific Init
 std::vector<Aircraft_SBS*> ACList;
@@ -63,14 +60,11 @@ Aircraft_SBS* FindAC(char* ICAO);
 void CursesPrintACList();
 
 // CAT21 Specific Init
-extern bool bMODERN;
 
 //Start of All Code
 
 int main()
 {
-    bgc_InitCurses();
-
     ReadIniFile();
 
     initialise_winsock();
@@ -87,6 +81,8 @@ int main()
 
     OpenUDPSocket(UDPSend_IP, UDPSend_Port);
     
+    bgc_InitCurses();
+
     mainConsoleLoop();
     
     closeandclean_winsock();
@@ -213,8 +209,6 @@ void ReadIniFile()
     printf("INI: TCPListen: Port: %d  IP: %s \r\n", TCPListen_Port, TCPListen_IP);
     printf("INI: UDP_Send: Port: %d  IP: %s \r\n", UDPSend_Port, UDPSend_IP);
 
-
-
     int sic = GetPrivateProfileInt(L"Form", L"CAT21_SIC", 16, inipath);
     int sac = GetPrivateProfileInt(L"Form", L"CAT21_SAC", 204, inipath);
     SetSIC_SAC(sic, sac);
@@ -223,11 +217,13 @@ void ReadIniFile()
     printf("INI: Age Out time: %d\r\n", dropAfterAge);
 
     int t = GetPrivateProfileInt(L"Form", L"CAT21_is_SITAWARE", 0, inipath);
-    if (t == 1) bMODERN = false;
-    else bMODERN = true;
-
+    (1 == t)?SetModernCAT21(false):SetModernCAT21(true);
+    printf("INI: CAT21 Type: %s\r\n", isModernCAT21()?"MODERN":"SITAWARE");
+    
 
     printf("Done reading .ini file\r\n----------------------\r\n");
+
+    Sleep(2000);
 }
 
 void PrintHelp()
@@ -244,7 +240,7 @@ void PrintHelp()
     mvprintw(r++, 0, "Packets Rx: %d  MSG Rx: %d  Packets Tx: %d", RxPacketCount, RxMSGCount, TxPacketCount);
     mvprintw(r++, 0, "CAT21 SIC: %d  SAC: %d", GetSIC(),GetSAC());
     mvprintw(r++, 0, "Track Timeout: %d", dropAfterAge);
-    mvprintw(r++, 0, "CAT21 Type: %s", bMODERN ? "Modern" : "SITAWARE");
+    mvprintw(r++, 0, "CAT21 Type: %s", isModernCAT21() ? "Modern" : "SITAWARE");
     mvprintw(r++, 0, "Debug is %s", g_debug ? "ON" : "OFF");
     mvprintw(r++, 0, "LINES: %d  COLS: %d", LINES, COLS);
     int cols, rows;
@@ -320,10 +316,14 @@ void mainConsoleLoop()
 
             case 't':
             case 'T':
-                bMODERN = !bMODERN;
-                if (bMODERN) printf("Switched to Modern CAT21\r\n");
-                else printf("Switched to SITAWARE CAT21\r\n");
+            {
+                isModernCAT21() ? SetModernCAT21(false) : SetModernCAT21(true);
+
+                if (isModernCAT21()) bgc_LOG_printf("Switched to Modern CAT21");
+                else bgc_LOG_printf("Switched to SITAWARE CAT21");
+                PrintHelp();
                 break;
+            }
             case 'x':
             case 'X':
                 done = true;
@@ -618,7 +618,7 @@ void CursesPrintACList()
     sort(ACList.begin(), ACList.end(), compareAC);
 
     int numRows = max(40,ACList.size() + 10 + gbc_GetLogSize());
-    SetConsoleSize(128, numRows);
+    SetConsoleSize(128, numRows);/////////////////////////////////
 
     int numCols = 20;
     int ColHdgStart[40] = {      0,     9,   17,      24,   29,    36,   46,   54,   61,  69,   76, 80, 84, 89, 94, 98, 102, 106, 109 ,114};
@@ -636,14 +636,13 @@ void CursesPrintACList()
     ++r;
 
     mvchgat(0, 0, -1, A_BLINK, 1, NULL);
-    mvprintw(r++, 0, "----------------------------------------------------------------------------------------------------------------_-----");
+    mvprintw(r++, 0, "----------------------------------------------------------------------------------------------------------------------");
 
     for (auto a : ACList)
     {
         int cp = 0;
         if (a->NewTrack > 0)  cp = 3;
         else if (a->age > (dropAfterAge - 5)) cp = 2;
-        //else cp = 0;
         attron(COLOR_PAIR(cp));
         {
             mvprintw(r, ColStart[0], "%6s", a->ICAO);

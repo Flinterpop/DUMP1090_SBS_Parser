@@ -1,5 +1,8 @@
 
 
+// good curses tutorial
+//https://invisible-island.net/ncurses/ncurses-intro.html
+
 #include <WTypesbase.h>
 
 #include "BG_Curses.h"
